@@ -37,7 +37,6 @@ body{background:#ede8f5;min-height:100vh;padding:16px}
 .list-table tr:hover td{background:#faf7ff;cursor:pointer}
 .avatar{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#fff}
 .tsr-cell{display:flex;align-items:center;gap:7px}
-.flag{font-size:15px}
 .visit-badge{padding:3px 8px;border-radius:10px;font-size:10px;font-weight:600;white-space:nowrap;display:inline-block}
 .status-pill{padding:3px 10px;border-radius:10px;font-size:10px;font-weight:600;display:inline-block}
 .cal-wrap{padding:14px 18px}
@@ -387,7 +386,6 @@ body{background:#ede8f5;min-height:100vh;padding:16px}
         <input id="c-name" type="text" placeholder="e.g. Ethiopia" oninput="onCountryNameInput()" autocomplete="off">
         <div id="c-name-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d4c0f0;border-radius:6px;z-index:50;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(91,45,142,0.12)"></div>
       </div>
-      <div class="mf"><label>Flag emoji <span id="c-flag-preview" style="font-size:18px"></span></label><input id="c-flag" type="text" placeholder="Auto-filled or type manually" style="font-size:16px" oninput="document.getElementById('c-flag-preview').textContent=this.value"></div>
     </div>
     <div class="mf"><label>Region</label>
       <select id="c-region">
@@ -617,7 +615,7 @@ function renderList(){
     const c = tsrColor(t.tsr);
     return `<tr onclick="openDetail('${t.id}')">
       <td><div class="tsr-cell"><div class="avatar" style="background:${c}">${ini(t.tsr)}</div><span>${t.tsr}</span></div></td>
-      <td><span class="flag">${t.flag||''}</span> ${t.country}</td>
+      <td>${t.country}</td>
       <td style="font-size:11px">${t.client}</td>
       <td style="font-size:11px">${fmtD(t.start_date)}</td>
       <td style="font-size:11px">${fmtD(t.end_date)}</td>
@@ -720,12 +718,12 @@ function openDetail(id){
   document.getElementById('detail-content').innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;margin-top:4px">
       <div class="avatar" style="width:36px;height:36px;font-size:13px;background:${c}">${ini(t.tsr)}</div>
-      <div><div style="font-size:14px;font-weight:600;color:#2d1a4a">${t.tsr}</div><div style="font-size:11px;color:#9b8bb4">${t.country} ${t.flag||''}</div></div>
+      <div><div style="font-size:14px;font-weight:600;color:#2d1a4a">${t.tsr}</div><div style="font-size:11px;color:#9b8bb4">${t.country}</div></div>
     </div>
     <span class="status-pill" style="background:${sc.bg};color:${sc.color};margin-bottom:14px;display:inline-block">${t.status}</span>
     <hr class="detail-divider">
     <div class="detail-field"><div class="detail-field-label">Trip / Client</div><div class="detail-field-value">${t.client}</div></div>
-    <div class="detail-field"><div class="detail-field-label">Destination</div><div class="detail-field-value">${t.flag||''} ${t.country}</div></div>
+    <div class="detail-field"><div class="detail-field-label">Destination</div><div class="detail-field-value">${t.country}</div></div>
     <div class="detail-field"><div class="detail-field-label">Departure</div><div class="detail-field-value">${fmtD(t.start_date)}</div></div>
     <div class="detail-field"><div class="detail-field-label">Return</div><div class="detail-field-value">${fmtD(t.end_date)}</div></div>
     <div class="detail-field"><div class="detail-field-label">Duration</div><div class="detail-field-value">${dur} day${dur!==1?'s':''}</div></div>
@@ -772,8 +770,7 @@ function closeModal(){document.getElementById('modal').classList.remove('open');
 async function saveItem(){
   const tsr=document.getElementById('m-tsr').value;
   const country=document.getElementById('m-country').value;
-  const countryObj = allCountries.find(c=>c.name===country);
-  const flag = countryObj ? (countryObj.flag||'🌍') : '🌍';
+
   const client=document.getElementById('m-client').value;
   const start_date=document.getElementById('m-start').value;
   const end_date=document.getElementById('m-end').value;
@@ -781,7 +778,7 @@ async function saveItem(){
   const status=document.getElementById('m-status').value;
   if(!tsr){showToast('Please select a TSR.',true);return;}
   if(!country||!client||!start_date||!end_date){showToast('Please fill in all required fields.',true);return;}
-  const payload={tsr,country,flag,client,start_date,end_date,visit_type,status};
+  const payload={tsr,country,client,start_date,end_date,visit_type,status};
   try {
     let res;
     if(editingId){
@@ -861,12 +858,6 @@ function onCountryNameInput(){
   const input = document.getElementById('c-name');
   const val = input.value.trim();
   const suggestions = document.getElementById('c-name-suggestions');
-  // Auto-fill flag if exact match
-  const exactFlag = COUNTRY_FLAGS[val];
-  if(exactFlag){
-    document.getElementById('c-flag').value = exactFlag;
-    document.getElementById('c-flag-preview').textContent = exactFlag;
-  }
   // Show suggestions dropdown
   if(val.length < 1){ suggestions.style.display='none'; return; }
   const matches = Object.entries(COUNTRY_FLAGS)
@@ -878,14 +869,12 @@ function onCountryNameInput(){
     <div onclick="selectCountrySuggestion('${name}','${flag}')"
       style="padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;border-bottom:1px solid #f0eaf8"
       onmouseover="this.style.background='#f7f3ff'" onmouseout="this.style.background=''">
-      <span style="font-size:18px">${flag}</span><span>${name}</span>
+      <span>${name}</span>
     </div>`).join('');
 }
 
 function selectCountrySuggestion(name, flag){
   document.getElementById('c-name').value = name;
-  document.getElementById('c-flag').value = flag;
-  document.getElementById('c-flag-preview').textContent = flag;
   document.getElementById('c-name-suggestions').style.display = 'none';
   // Auto-set region
   const regionMap = {
@@ -929,12 +918,12 @@ function populateCountryDropdowns(){
   const sel = document.getElementById('m-country');
   const cur = sel.value;
   sel.innerHTML = '<option value="">— Select country —</option>' +
-    allCountries.map(c=>`<option value="${c.name}" data-flag="${c.flag||''}"${c.name===cur?' selected':''}>${c.flag||''} ${c.name}</option>`).join('');
+    allCountries.map(c=>`<option value="${c.name}" data-flag="${c.flag||''}"${c.name===cur?' selected':''}>${c.name}</option>`).join('');
   // Clients modal country dropdown
   const clSel = document.getElementById('cl-country');
   if(clSel){
     clSel.innerHTML = '<option value="">— Select country —</option>' +
-      allCountries.map(c=>`<option value="${c.name}">${c.flag||''} ${c.name}</option>`).join('');
+      allCountries.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
   }
 }
 
@@ -961,7 +950,7 @@ function openCountriesModal(){
   const clSel = document.getElementById('cl-country');
   if(clSel){
     clSel.innerHTML = '<option value="">— Select country —</option>' +
-      allCountries.map(c=>`<option value="${c.name}">${c.flag||''} ${c.name}</option>`).join('');
+      allCountries.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
   }
 }
 function closeCountriesModal(){document.getElementById('countries-modal').classList.remove('open');}
@@ -971,7 +960,7 @@ function renderCountriesList(){
   if(!allCountries.length){container.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">No countries yet.</div>';return;}
   container.innerHTML = allCountries.map(c=>`
     <div class="user-row" id="country-row-${c.id}">
-      <div style="font-size:22px;width:30px;text-align:center">${c.flag||'🌍'}</div>
+<div style="width:30px;height:30px;background:#ede9fe;border-radius:6px;display:flex;align-items:center;justify-content:center"><i class="ti ti-world" style="font-size:14px;color:#7c3aed"></i></div>
       <div style="flex:1">
         <div style="font-size:12px;font-weight:600;color:#2d1a4a">${c.name}</div>
         <div style="font-size:10px;color:#9b8bb4">${c.region||'—'}</div>
@@ -985,18 +974,15 @@ function renderCountriesList(){
 
 async function saveCountry(){
   const name = document.getElementById('c-name').value.trim();
-  const flag = document.getElementById('c-flag').value.trim() || COUNTRY_FLAGS[name] || '🌍';
   const region = document.getElementById('c-region').value;
   if(!name){showToast('Please enter a country name.',true);return;}
   const res = await fetch(`${SUPABASE_URL}/rest/v1/countries`, {
     method:'POST', headers:{...HEADERS,'Prefer':'return=minimal'},
-    body: JSON.stringify({name, flag, region})
+    body: JSON.stringify({name, region})
   });
   if(!res.ok){showToast('Error: HTTP '+res.status,true);return;}
   showToast('Country added ✓');
   document.getElementById('c-name').value='';
-  document.getElementById('c-flag').value='';
-  document.getElementById('c-flag-preview').textContent='';
   document.getElementById('c-name-suggestions').style.display='none';
   await loadCountries();
   renderCountriesList();
@@ -1019,7 +1005,7 @@ function openClientsModal(){
   renderClientsList();
   const clSel = document.getElementById('cl-country');
   clSel.innerHTML = '<option value="">— Select country —</option>' +
-    allCountries.map(c=>`<option value="${c.name}">${c.flag||''} ${c.name}</option>`).join('');
+    allCountries.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
 }
 function closeClientsModal(){document.getElementById('clients-modal').classList.remove('open');}
 
