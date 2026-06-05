@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Travel Planner</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif}
 body{background:#ede8f5;min-height:100vh;padding:16px}
@@ -94,6 +94,15 @@ body{background:#ede8f5;min-height:100vh;padding:16px}
 .toast{position:fixed;bottom:24px;right:24px;background:#5b2d8e;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:200;opacity:0;transform:translateY(10px);transition:all 0.25s;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
 .error-box{background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:12px 16px;margin:16px;font-size:12px;color:#dc2626}
+.users-modal-box{background:#fff;border-radius:12px;border:1px solid #d4c0f0;width:520px;max-width:95vw;padding:22px;box-shadow:0 8px 32px rgba(91,45,142,0.15);max-height:90vh;overflow-y:auto}
+.user-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;border:1px solid #f0eaf8;margin-bottom:7px;background:#faf7ff}
+.user-row:hover{background:#f3eeff}
+.color-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;cursor:pointer;border:2px solid rgba(0,0,0,0.1)}
+.color-picker-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:6px}
+.color-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform 0.1s}
+.color-swatch:hover,.color-swatch.selected{transform:scale(1.2);border-color:#2d1a4a}
+.role-badge{padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600;background:#ede9fe;color:#5b21b6}
+.user-inactive{opacity:0.45}
 .detail-panel{position:fixed;right:0;top:0;bottom:0;width:300px;background:#fff;border-left:1px solid #e0d4f5;z-index:90;padding:20px;transform:translateX(100%);transition:transform 0.2s;overflow-y:auto;box-shadow:-4px 0 16px rgba(91,45,142,0.10)}
 .detail-panel.open{transform:translateX(0)}
 .detail-close{float:right;background:transparent;border:none;cursor:pointer;color:#bbb;font-size:18px}
@@ -126,8 +135,10 @@ body{background:#ede8f5;min-height:100vh;padding:16px}
       <div class="sidebar-logo-icon"><i class="ti ti-plane"></i></div>
       <div class="sidebar-logo-text">Travel<br>Planner</div>
     </div>
-    <button class="sidebar-new" onclick="openModal()"><i class="ti ti-plus" style="font-size:14px"></i> New item</button>
+    <button class="sidebar-new" onclick="openModal()"><i class="ti ti-plus" style="font-size:14px"></i> New Trip</button>
     <div class="sidebar-section">
+      <div class="sidebar-item" onclick="openUsersModal()"><i class="ti ti-users"></i> Manage users</div>
+      <div class="sidebar-divider"></div>
       <div class="sidebar-item active" onclick="setNav(this,'all')"><i class="ti ti-list-details"></i> All items</div>
       <div class="sidebar-item" onclick="setNav(this,'my')"><i class="ti ti-user"></i> My trips</div>
       <div class="sidebar-item" onclick="setNav(this,'country')"><i class="ti ti-world"></i> By country</div>
@@ -278,7 +289,7 @@ body{background:#ede8f5;min-height:100vh;padding:16px}
 <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal-box">
     <div class="modal-ttl"><i class="ti ti-plane-departure" style="font-size:17px;color:#5b2d8e"></i> <span id="modal-title-text">Add new trip</span></div>
-    <div class="mf"><label>TSR (Traveler name)</label><input id="m-tsr" type="text" placeholder="e.g. Gert Van Schalkwyk"></div>
+    <div class="mf"><label>TSR (Traveler)</label><select id="m-tsr"><option value="">— Select TSR —</option></select></div>
     <div class="mf-row">
       <div class="mf"><label>Country</label><input id="m-country" type="text" placeholder="e.g. Ghana"></div>
       <div class="mf"><label>Flag emoji</label><input id="m-flag" type="text" placeholder="e.g. 🇬🇭" style="font-size:16px"></div>
@@ -301,7 +312,7 @@ body{background:#ede8f5;min-height:100vh;padding:16px}
     <div class="modal-actions">
       <button class="btn-delete" id="btn-delete" style="display:none" onclick="deleteTrip()"><i class="ti ti-trash" style="font-size:13px"></i> Delete</button>
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-save" onclick="saveItem()"><span id="btn-save-text">Save item</span></button>
+      <button class="btn-save" onclick="saveItem()"><span id="btn-save-text">Save trip</span></button>
     </div>
   </div>
 </div>
@@ -312,13 +323,73 @@ body{background:#ede8f5;min-height:100vh;padding:16px}
   <div id="detail-content"></div>
 </div>
 
+<!-- Users Modal -->
+<div class="modal-overlay" id="users-modal" onclick="if(event.target===this)closeUsersModal()">
+  <div class="users-modal-box">
+    <div class="modal-ttl"><i class="ti ti-users" style="font-size:17px;color:#5b2d8e"></i> Manage Users</div>
+
+    <!-- Existing users list -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;color:#7c5a9e;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Current users</div>
+      <div id="users-list"><div class="loading"><div class="spinner"></div> Loading...</div></div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid #e0d4f5;margin:16px 0">
+
+    <!-- Add new user form -->
+    <div style="font-size:11px;font-weight:600;color:#7c5a9e;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Add new user</div>
+    <div class="mf-row">
+      <div class="mf"><label>Full name</label><input id="u-name" type="text" placeholder="e.g. John Smith"></div>
+      <div class="mf"><label>Initials</label><input id="u-initials" type="text" placeholder="JS" maxlength="2" style="text-transform:uppercase"></div>
+    </div>
+    <div class="mf-row">
+      <div class="mf"><label>Email (optional)</label><input id="u-email" type="email" placeholder="john@company.com"></div>
+      <div class="mf"><label>Role</label>
+        <select id="u-role">
+          <option value="TSR">TSR</option>
+          <option value="Manager">Manager</option>
+          <option value="Admin">Admin</option>
+          <option value="Viewer">Viewer</option>
+        </select>
+      </div>
+    </div>
+    <div class="mf">
+      <label>Colour</label>
+      <div class="color-picker-row" id="color-picker">
+        <div class="color-swatch selected" style="background:#7c3aed" data-color="#7c3aed" onclick="selectColor(this)"></div>
+        <div class="color-swatch" style="background:#0369a1" data-color="#0369a1" onclick="selectColor(this)"></div>
+        <div class="color-swatch" style="background:#b45309" data-color="#b45309" onclick="selectColor(this)"></div>
+        <div class="color-swatch" style="background:#0f766e" data-color="#0f766e" onclick="selectColor(this)"></div>
+        <div class="color-swatch" style="background:#be185d" data-color="#be185d" onclick="selectColor(this)"></div>
+        <div class="color-swatch" style="background:#15803d" data-color="#15803d" onclick="selectColor(this)"></div>
+        <div class="color-swatch" style="background:#9333ea" data-color="#9333ea" onclick="selectColor(this)"></div>
+        <div class="color-swatch" style="background:#1d4ed8" data-color="#1d4ed8" onclick="selectColor(this)"></div>
+        <div class="color-swatch" style="background:#b91c1c" data-color="#b91c1c" onclick="selectColor(this)"></div>
+        <div class="color-swatch" style="background:#0e7490" data-color="#0e7490" onclick="selectColor(this)"></div>
+        <div class="color-swatch" style="background:#854d0e" data-color="#854d0e" onclick="selectColor(this)"></div>
+        <div class="color-swatch" style="background:#166534" data-color="#166534" onclick="selectColor(this)"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeUsersModal()">Close</button>
+      <button class="btn-save" onclick="saveUser()"><i class="ti ti-user-plus" style="font-size:13px;margin-right:4px"></i>Add user</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 // ─── Supabase config ───────────────────────────────────────────
 const SUPABASE_URL = 'https://wwhwuxypnxpjjqfbwxte.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_0AX7-xR9SoIzCgJuoUwjHA_P9PWjmOF';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3aHd1eHlwbnhwampxZmJ3eHRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTk1MTEsImV4cCI6MjA5NjIzNTUxMX0.eJkX0loiPgeTNk-dvjBoGIl7Aw7SSt0uYOchK1ywy6U';
+let sb;
+try {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch(e) {
+  console.error('Supabase init error:', e);
+  document.getElementById('list-loading').innerHTML = `<div class="error-box">⚠️ Could not initialise database connection: ${e.message}</div>`;
+}
 
 // ─── Constants ─────────────────────────────────────────────────
 const TSR_COLORS={
@@ -347,6 +418,7 @@ const FLAGS={
 
 // ─── State ─────────────────────────────────────────────────────
 let allTrips = [];
+let allUsers = [];
 let filters = {tsr:'',country:'',status:'',month:''};
 let calYear = 2026, calMonth = 5;
 let currentTab = 'items';
@@ -357,6 +429,9 @@ let colorIdx = 0;
 // ─── Helpers ───────────────────────────────────────────────────
 function ini(n){return n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();}
 function tsrColor(n){
+  // First check users table color
+  const user = allUsers.find(u=>u.full_name===n);
+  if(user && user.color) return user.color;
   if(!tsrColorMap[n]){
     tsrColorMap[n] = TSR_COLORS[n] || COLOR_PALETTE[colorIdx % COLOR_PALETTE.length];
     colorIdx++;
@@ -380,16 +455,32 @@ function showToast(msg, isError=false){
 async function loadTrips(){
   document.getElementById('list-loading').style.display='flex';
   document.getElementById('list-table').style.display='none';
-  const {data, error} = await sb.from('trips').select('*').order('start_date');
-  if(error){
-    document.getElementById('list-loading').innerHTML=`<div class="error-box">⚠️ Could not load trips: ${error.message}</div>`;
-    return;
+  try {
+    const {data, error} = await sb.from('trips').select('*').order('start_date');
+    if(error) throw new Error(error.message);
+    allTrips = data;
+    document.getElementById('list-loading').style.display='none';
+    document.getElementById('list-table').style.display='';
+    populateFilterDropdowns();
+    render();
+  } catch(e) {
+    console.error('loadTrips error:', e);
+    document.getElementById('list-loading').innerHTML=`<div class="error-box">⚠️ Could not load trips: ${e.message}<br><br><small>Check your internet connection and try refreshing the page.</small></div>`;
   }
-  allTrips = data;
-  document.getElementById('list-loading').style.display='none';
-  document.getElementById('list-table').style.display='';
-  populateFilterDropdowns();
-  render();
+}
+
+async function loadUsers(){
+  const {data, error} = await sb.from('users').select('*').eq('active', true).order('full_name');
+  if(error){ console.error('Could not load users:', error.message); return; }
+  allUsers = data;
+  populateUserDropdown();
+}
+
+function populateUserDropdown(){
+  const sel = document.getElementById('m-tsr');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Select TSR —</option>' +
+    allUsers.map(u=>`<option value="${u.full_name}"${u.full_name===current?' selected':''}>${u.full_name}</option>`).join('');
 }
 
 function populateFilterDropdowns(){
@@ -564,9 +655,10 @@ function closeDetail(){document.getElementById('detail-panel').classList.remove(
 function openModal(){
   editingId=null;
   document.getElementById('modal-title-text').textContent='Add new trip';
-  document.getElementById('btn-save-text').textContent='Save item';
+  document.getElementById('btn-save-text').textContent='Save trip';
   document.getElementById('btn-delete').style.display='none';
-  ['m-tsr','m-country','m-flag','m-client','m-start','m-end'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('m-tsr').value='';
+  ['m-country','m-flag','m-client','m-start','m-end'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('m-vtype').value='Sales';
   document.getElementById('m-status').value='Planned';
   document.getElementById('modal').classList.add('open');
@@ -577,7 +669,7 @@ function openEditModal(id){
   editingId=id;
   closeDetail();
   document.getElementById('modal-title-text').textContent='Edit trip';
-  document.getElementById('btn-save-text').textContent='Update item';
+  document.getElementById('btn-save-text').textContent='Update trip';
   document.getElementById('btn-delete').style.display='';
   document.getElementById('m-tsr').value=t.tsr;
   document.getElementById('m-country').value=t.country;
@@ -592,7 +684,7 @@ function openEditModal(id){
 function closeModal(){document.getElementById('modal').classList.remove('open');editingId=null;}
 
 async function saveItem(){
-  const tsr=document.getElementById('m-tsr').value.trim();
+  const tsr=document.getElementById('m-tsr').value;
   const country=document.getElementById('m-country').value.trim();
   const flag=document.getElementById('m-flag').value.trim()||FLAGS[country]||'🌍';
   const client=document.getElementById('m-client').value.trim();
@@ -600,7 +692,8 @@ async function saveItem(){
   const end_date=document.getElementById('m-end').value;
   const visit_type=document.getElementById('m-vtype').value;
   const status=document.getElementById('m-status').value;
-  if(!tsr||!country||!client||!start_date||!end_date){showToast('Please fill in all required fields.',true);return;}
+  if(!tsr){showToast('Please select a TSR.',true);return;}
+  if(!country||!client||!start_date||!end_date){showToast('Please fill in all required fields.',true);return;}
   const payload={tsr,country,flag,client,start_date,end_date,visit_type,status};
   let error;
   if(editingId){
@@ -625,8 +718,71 @@ async function deleteTrip(){
   await loadTrips();
 }
 
+// ─── Users Modal ───────────────────────────────────────────────
+let selectedColor = '#7c3aed';
+
+function selectColor(el){
+  document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedColor = el.dataset.color;
+}
+
+function openUsersModal(){
+  document.getElementById('users-modal').classList.add('open');
+  renderUsersList();
+}
+function closeUsersModal(){document.getElementById('users-modal').classList.remove('open');}
+
+function renderUsersList(){
+  const container = document.getElementById('users-list');
+  if(!allUsers.length){container.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">No users yet.</div>';return;}
+  container.innerHTML = allUsers.map(u=>`
+    <div class="user-row ${u.active?'':'user-inactive'}">
+      <div class="avatar" style="background:${u.color||'#7c3aed'};width:30px;height:30px;font-size:11px">${u.initials||ini(u.full_name)}</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:#2d1a4a">${u.full_name}</div>
+        <div style="font-size:10px;color:#9b8bb4">${u.email||'No email'} · <span class="role-badge">${u.role||'TSR'}</span></div>
+      </div>
+      <div class="color-dot" style="background:${u.color||'#7c3aed'}" title="Colour"></div>
+      <button onclick="toggleUserActive('${u.id}',${u.active})" style="background:transparent;border:1px solid #d4c0f0;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;color:${u.active?'#dc2626':'#166534'};font-weight:600">
+        ${u.active?'Deactivate':'Activate'}
+      </button>
+    </div>
+  `).join('');
+}
+
+async function saveUser(){
+  const full_name = document.getElementById('u-name').value.trim();
+  const initials = document.getElementById('u-initials').value.trim().toUpperCase();
+  const email = document.getElementById('u-email').value.trim();
+  const role = document.getElementById('u-role').value;
+  const color = selectedColor;
+  if(!full_name){showToast('Please enter a full name.',true);return;}
+  const {error} = await sb.from('users').insert([{full_name, initials:initials||ini(full_name), email:email||null, role, color, active:true}]);
+  if(error){showToast('Error: '+error.message,true);return;}
+  showToast('User added successfully ✓');
+  document.getElementById('u-name').value='';
+  document.getElementById('u-initials').value='';
+  document.getElementById('u-email').value='';
+  document.getElementById('u-role').value='TSR';
+  await loadUsers();
+  renderUsersList();
+}
+
+async function toggleUserActive(id, current){
+  const {error} = await sb.from('users').update({active:!current}).eq('id',id);
+  if(error){showToast('Error: '+error.message,true);return;}
+  showToast(current?'User deactivated':'User activated ✓');
+  await loadUsers();
+  renderUsersList();
+}
+
 // ─── Init ──────────────────────────────────────────────────────
-loadTrips();
+async function init(){
+  await loadUsers();
+  await loadTrips();
+}
+init();
 </script>
 </body>
 </html>
