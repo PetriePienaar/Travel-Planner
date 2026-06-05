@@ -1134,13 +1134,32 @@ async function saveEditUser(id){
   const selectedSwatch = colorContainer.querySelector('[data-sel="1"]');
   const color = selectedSwatch ? selectedSwatch.dataset.color : (allUsers.find(u=>u.id===id)||{}).color || '#7c3aed';
   if(!full_name){showToast('Please enter a full name.',true);return;}
+  // Get the old name before saving
+  const oldUser = allUsers.find(u=>u.id===id);
+  const old_name = oldUser ? oldUser.full_name : null;
+  // Update user record
   const res = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${id}`, {
     method:'PATCH',
     headers:{...HEADERS,'Prefer':'return=minimal'},
     body: JSON.stringify({full_name, initials:initials||ini(full_name), email:email||null, role, color})
   });
   if(!res.ok){showToast('Error: HTTP '+res.status,true);return;}
-  showToast('User updated successfully ✓');
+  // If name changed, cascade update all trips with the old name
+  if(old_name && old_name !== full_name){
+    const tripRes = await fetch(`${SUPABASE_URL}/rest/v1/trips?tsr=eq.${encodeURIComponent(old_name)}`, {
+      method:'PATCH',
+      headers:{...HEADERS,'Prefer':'return=minimal'},
+      body: JSON.stringify({tsr: full_name})
+    });
+    if(!tripRes.ok){
+      showToast('User updated but trips could not be updated: HTTP '+tripRes.status, true);
+    } else {
+      showToast(`User updated ✓ — trips updated from "${old_name}" to "${full_name}"`);
+    }
+    await loadTrips();
+  } else {
+    showToast('User updated successfully ✓');
+  }
   await loadUsers();
   renderUsersList();
 }
