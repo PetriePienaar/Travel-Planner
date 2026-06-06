@@ -2209,6 +2209,7 @@ function runClientReport(){
         <tr style="background:#eaf6fd">
           <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#2a6a8a;border-bottom:1px solid #c0dff0">TSR</th>
           <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#2a6a8a;border-bottom:1px solid #c0dff0">Country</th>
+          <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#2a6a8a;border-bottom:1px solid #c0dff0">Site</th>
           <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#2a6a8a;border-bottom:1px solid #c0dff0">Start date</th>
           <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#2a6a8a;border-bottom:1px solid #c0dff0">End date</th>
           <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#2a6a8a;border-bottom:1px solid #c0dff0">Days</th>
@@ -2230,6 +2231,7 @@ function runClientReport(){
               </div>
             </td>
             <td style="padding:8px 10px;border-bottom:1px solid #e8f4fb">${t.country}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #e8f4fb">${t.site||'—'}</td>
             <td style="padding:8px 10px;border-bottom:1px solid #e8f4fb">${fmtD(t.start_date)}</td>
             <td style="padding:8px 10px;border-bottom:1px solid #e8f4fb">${fmtD(t.end_date)}</td>
             <td style="padding:8px 10px;border-bottom:1px solid #e8f4fb">${days}</td>
