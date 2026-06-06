@@ -289,6 +289,7 @@ body{background:#e0f2fa;min-height:100vh;padding:16px}
       <div class="sidebar-item" onclick="openUsersModal()"><i class="ti ti-users"></i> Manage users</div>
       <div class="sidebar-item" onclick="openCountriesModal()"><i class="ti ti-world"></i> Manage countries</div>
       <div class="sidebar-item" onclick="openClientsModal()"><i class="ti ti-building"></i> Manage clients</div>
+      <div class="sidebar-item" onclick="openSitesModal()"><i class="ti ti-map-pin"></i> Manage sites</div>
       <div class="sidebar-item" onclick="openVisitTypesModal()"><i class="ti ti-tag"></i> Manage visit types</div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-item active" onclick="setNav(this,'all')"><i class="ti ti-list-details"></i> All Trips</div>
@@ -324,6 +325,7 @@ body{background:#e0f2fa;min-height:100vh;padding:16px}
               <th style="width:115px;cursor:pointer;user-select:none" onclick="sortBy('tsr')">TSR <span id="sort-tsr"></span></th>
               <th style="width:95px;cursor:pointer;user-select:none" onclick="sortBy('country')">Country <span id="sort-country"></span></th>
               <th style="width:115px;cursor:pointer;user-select:none" onclick="sortBy('client')">Client <span id="sort-client"></span></th>
+              <th style="width:100px;cursor:pointer;user-select:none" onclick="sortBy('site')">Site <span id="sort-site"></span></th>
               <th style="width:85px;cursor:pointer;user-select:none" onclick="sortBy('start_date')">Start date <span id="sort-start_date">↑</span></th>
               <th style="width:85px;cursor:pointer;user-select:none" onclick="sortBy('end_date')">End date <span id="sort-end_date"></span></th>
               <th style="width:95px;cursor:pointer;user-select:none" onclick="sortBy('visit_type')">Visit type <span id="sort-visit_type"></span></th>
@@ -470,7 +472,8 @@ body{background:#e0f2fa;min-height:100vh;padding:16px}
     <div class="modal-ttl"><i class="ti ti-plane-departure" style="font-size:17px;color:#00273a"></i> <span id="modal-title-text">Add new trip</span></div>
     <div class="mf"><label>TSR (Traveler)</label><select id="m-tsr"><option value="">— Select TSR —</option></select></div>
     <div class="mf"><label>Country</label><select id="m-country" onchange="onCountryChange()"><option value="">— Select country —</option></select></div>
-    <div class="mf"><label>Client</label><select id="m-client"><option value="">— Select client —</option></select></div>
+    <div class="mf"><label>Client</label><select id="m-client" onchange="onClientChange()"><option value="">— Select client —</option></select></div>
+    <div class="mf"><label>Site</label><select id="m-site"><option value="">— Select site (optional) —</option></select></div>
     <div class="mf-row">
       <div class="mf"><label>Start date</label><input id="m-start" type="date"></div>
       <div class="mf"><label>End date</label><input id="m-end" type="date"></div>
@@ -547,6 +550,37 @@ body{background:#e0f2fa;min-height:100vh;padding:16px}
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeUsersModal()">Close</button>
       <button class="btn-save" onclick="saveUser()"><i class="ti ti-user-plus" style="font-size:13px;margin-right:4px"></i>Add user</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sites Modal -->
+<div class="modal-overlay" id="sites-modal" onclick="if(event.target===this)closeSitesModal()">
+  <div class="users-modal-box">
+    <div class="modal-ttl"><i class="ti ti-map-pin" style="font-size:17px;color:#00273a"></i> Manage Sites</div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;color:#2a6a8a;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Current sites</div>
+      <div class="filter-group" style="margin-bottom:10px">
+        <div class="filter-label">Filter by client</div>
+        <select id="sites-filter-client" class="filter-select" onchange="renderSitesList()">
+          <option value="">All clients</option>
+        </select>
+      </div>
+      <div id="sites-list"><div class="loading"><div class="spinner"></div> Loading...</div></div>
+    </div>
+    <hr style="border:none;border-top:1px solid #c0dff0;margin:16px 0">
+    <div style="font-size:11px;font-weight:600;color:#2a6a8a;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Add new site</div>
+    <div class="mf">
+      <label>Client</label>
+      <select id="s-client" class="filter-select" style="padding:7px 10px;font-size:12px;border-radius:6px">
+        <option value="">— Select client —</option>
+      </select>
+    </div>
+    <div class="mf"><label>Site name</label><input id="s-name" type="text" placeholder="e.g. Wassa West Mine"></div>
+    <div class="mf"><label>Country</label><select id="s-country" class="filter-select" style="padding:7px 10px;font-size:12px;border-radius:6px"><option value="">— Select country —</option></select></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeSitesModal()">Close</button>
+      <button class="btn-save" onclick="saveSite()"><i class="ti ti-plus" style="font-size:13px;margin-right:4px"></i>Add site</button>
     </div>
   </div>
 </div>
@@ -1022,7 +1056,7 @@ function sortBy(field){
     sortDir = 'asc';
   }
   // Update sort indicators
-  ['tsr','country','client','start_date','end_date','visit_type','status'].forEach(f=>{
+  ['tsr','country','client','site','start_date','end_date','visit_type','status'].forEach(f=>{
     const el = document.getElementById('sort-'+f);
     if(el) el.textContent = f===sortField ? (sortDir==='asc'?'↑':'↓') : '';
   });
@@ -1056,6 +1090,7 @@ function renderList(){
       <td><div class="tsr-cell"><div class="avatar" style="background:${c}">${ini(t.tsr)}</div><span>${t.tsr}</span></div></td>
       <td>${t.country}</td>
       <td style="font-size:11px">${t.client}</td>
+      <td style="font-size:11px;color:#4a7a96">${t.site||'—'}</td>
       <td style="font-size:11px">${fmtD(t.start_date)}</td>
       <td style="font-size:11px">${fmtD(t.end_date)}</td>
       <td><span class="visit-badge" style="background:${vc.bg};color:${vc.color}">${t.visit_type}</span></td>
@@ -1184,6 +1219,7 @@ function openDetail(id){
     <div class="detail-field"><div class="detail-field-label">Departure</div><div class="detail-field-value">${fmtD(t.start_date)}</div></div>
     <div class="detail-field"><div class="detail-field-label">Return</div><div class="detail-field-value">${fmtD(t.end_date)}</div></div>
     <div class="detail-field"><div class="detail-field-label">Duration</div><div class="detail-field-value">${dur} day${dur!==1?'s':''}</div></div>
+    <div class="detail-field"><div class="detail-field-label">Site</div><div class="detail-field-value">${t.site||'—'}</div></div>
     <div class="detail-field"><div class="detail-field-label">Visit type</div><div class="detail-field-value">${t.visit_type}</div></div>
     <hr class="detail-divider">
     <button onclick="openEditModal('${t.id}')" style="width:100%;padding:8px;border:1px solid #a0ccec;border-radius:6px;background:#f0f9ff;color:#00273a;font-size:12px;cursor:pointer;font-weight:600;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-edit" style="font-size:14px"></i> Edit trip</button>
@@ -1199,7 +1235,7 @@ function openModal(){
   document.getElementById('btn-save-text').textContent='Save trip';
   document.getElementById('btn-delete').style.display='none';
   document.getElementById('m-tsr').value='';
-  ['m-country','m-client','m-start','m-end'].forEach(id=>document.getElementById(id).value='');
+  ['m-country','m-client','m-site','m-start','m-end'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('m-vtype').value='';
   document.getElementById('m-status').value='Planned';
   document.getElementById('modal').classList.add('open');
@@ -1229,13 +1265,14 @@ async function saveItem(){
   const country=document.getElementById('m-country').value;
 
   const client=document.getElementById('m-client').value;
+  const site=document.getElementById('m-site').value;
   const start_date=document.getElementById('m-start').value;
   const end_date=document.getElementById('m-end').value;
   const visit_type=document.getElementById('m-vtype').value;
   const status=document.getElementById('m-status').value;
   if(!tsr){showToast('Please select a TSR.',true);return;}
   if(!country||!client||!start_date||!end_date){showToast('Please fill in all required fields.',true);return;}
-  const payload={tsr,country,client,start_date,end_date,visit_type,status};
+  const payload={tsr,country,client,site:site||null,start_date,end_date,visit_type,status};
   try {
     let res;
     if(editingId){
@@ -1496,6 +1533,165 @@ async function deleteVisitType(id, name){
   renderVisitTypesList();
 }
 
+// ─── Sites Data ───────────────────────────────────────────────
+let allSites = [];
+
+async function loadSites(){
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/sites?order=site_name`, {headers: HEADERS});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    allSites = await res.json();
+  } catch(e){ console.error('Could not load sites:', e.message); }
+}
+
+function populateSiteDropdown(clientName=''){
+  const sel = document.getElementById('m-site');
+  const cur = sel.value;
+  const filtered = clientName ? allSites.filter(s=>s.client_name===clientName) : allSites;
+  sel.innerHTML = '<option value="">— Select site (optional) —</option>' +
+    filtered.map(s=>`<option value="${s.site_name}"${s.site_name===cur?' selected':''}>${s.site_name}</option>`).join('');
+}
+
+function onClientChange(){
+  const country = document.getElementById('m-country').value;
+  const client = document.getElementById('m-client').value;
+  populateClientDropdown(country);
+  document.getElementById('m-client').value = client;
+  populateSiteDropdown(client);
+  document.getElementById('m-site').value = '';
+}
+
+function openSitesModal(){
+  document.getElementById('sites-modal').classList.add('open');
+  // Populate client filter
+  const filterSel = document.getElementById('sites-filter-client');
+  filterSel.innerHTML = '<option value="">All clients</option>' +
+    allClients.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  // Populate client dropdown in add form
+  const sSel = document.getElementById('s-client');
+  sSel.innerHTML = '<option value="">— Select client —</option>' +
+    allClients.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  // Populate country dropdown in add form
+  const countrySel = document.getElementById('s-country');
+  countrySel.innerHTML = '<option value="">— Select country —</option>' +
+    allCountries.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  renderSitesList();
+}
+function closeSitesModal(){document.getElementById('sites-modal').classList.remove('open');}
+
+function renderSitesList(){
+  const container = document.getElementById('sites-list');
+  const filterClient = document.getElementById('sites-filter-client').value;
+  const filtered = filterClient ? allSites.filter(s=>s.client_name===filterClient) : allSites;
+  if(!filtered.length){
+    container.innerHTML='<div style="font-size:12px;color:#aaa;padding:8px">No sites found.</div>';
+    return;
+  }
+  // Group by client
+  const grouped = {};
+  filtered.forEach(s=>{
+    if(!grouped[s.client_name]) grouped[s.client_name]=[];
+    grouped[s.client_name].push(s);
+  });
+  container.innerHTML = Object.entries(grouped).map(([client, sites])=>`
+    <div style="margin-bottom:10px">
+      <div style="font-size:10px;font-weight:700;color:#00273a;text-transform:uppercase;letter-spacing:0.5px;padding:4px 0;border-bottom:1px solid #e8f4fb;margin-bottom:6px">${client}</div>
+      ${sites.map(s=>`
+        <div class="user-row" id="site-row-${s.id}" style="margin-bottom:5px">
+          <i class="ti ti-map-pin" style="font-size:16px;color:#0082b8;flex-shrink:0"></i>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:600;color:#00273a">${s.site_name}</div>
+            <div style="font-size:10px;color:#4a7a96">${s.country||'—'}</div>
+          </div>
+          <button onclick="openEditSite('${s.id}')" style="background:transparent;border:1px solid #a0ccec;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;color:#00273a;font-weight:600;margin-right:4px">Edit</button>
+          <button onclick="deleteSite('${s.id}','${s.site_name}')" style="background:transparent;border:1px solid #fca5a5;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;color:#dc2626;font-weight:600">Delete</button>
+        </div>`).join('')}
+    </div>
+  `).join('');
+}
+
+function openEditSite(id){
+  const s = allSites.find(x=>x.id===id);
+  if(!s) return;
+  const row = document.getElementById('site-row-'+id);
+  const countryOptions = allCountries.map(c=>`<option value="${c.name}"${c.name===s.country?' selected':''}>${c.name}</option>`).join('');
+  const clientOptions = allClients.map(c=>`<option value="${c.name}"${c.name===s.client_name?' selected':''}>${c.name}</option>`).join('');
+  row.innerHTML = `
+    <div style="width:100%;padding:4px 0">
+      <div class="mf-row" style="margin-bottom:8px">
+        <div><label style="font-size:10px;color:#2a6a8a;font-weight:600;display:block;margin-bottom:3px">Site name</label>
+          <input id="es-name-${id}" value="${s.site_name}" style="width:100%;padding:5px 8px;font-size:12px;border:1px solid #a0ccec;border-radius:5px"></div>
+        <div><label style="font-size:10px;color:#2a6a8a;font-weight:600;display:block;margin-bottom:3px">Country</label>
+          <select id="es-country-${id}" style="width:100%;padding:5px 8px;font-size:12px;border:1px solid #a0ccec;border-radius:5px">
+            <option value="">—</option>${countryOptions}
+          </select></div>
+      </div>
+      <div class="mf" style="margin-bottom:10px">
+        <label style="font-size:10px;color:#2a6a8a;font-weight:600;display:block;margin-bottom:3px">Client</label>
+        <select id="es-client-${id}" style="width:100%;padding:5px 8px;font-size:12px;border:1px solid #a0ccec;border-radius:5px">
+          <option value="">—</option>${clientOptions}
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button onclick="renderSitesList()" style="padding:5px 12px;font-size:11px;border:1px solid #a0ccec;border-radius:5px;background:transparent;cursor:pointer;color:#4a7a96">Cancel</button>
+        <button onclick="saveEditSite('${id}')" style="padding:5px 12px;font-size:11px;border:none;border-radius:5px;background:#00273a;color:#fff;cursor:pointer;font-weight:600">Save changes</button>
+      </div>
+    </div>
+  `;
+}
+
+async function saveEditSite(id){
+  const site_name = document.getElementById('es-name-'+id).value.trim();
+  const country = document.getElementById('es-country-'+id).value;
+  const client_name = document.getElementById('es-client-'+id).value;
+  if(!site_name){showToast('Please enter a site name.',true);return;}
+  const old = allSites.find(s=>s.id===id);
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/sites?id=eq.${id}`, {
+    method:'PATCH', headers:{...HEADERS,'Prefer':'return=minimal'},
+    body: JSON.stringify({site_name, country, client_name})
+  });
+  if(!res.ok){showToast('Error: HTTP '+res.status,true);return;}
+  // Cascade site name change to trips
+  if(old && old.site_name !== site_name){
+    await fetch(`${SUPABASE_URL}/rest/v1/trips?site=eq.${encodeURIComponent(old.site_name)}`, {
+      method:'PATCH', headers:{...HEADERS,'Prefer':'return=minimal'},
+      body: JSON.stringify({site: site_name})
+    });
+    await loadTrips();
+  }
+  showToast('Site updated ✓');
+  await loadSites();
+  renderSitesList();
+  populateSiteDropdown();
+}
+
+async function saveSite(){
+  const client_name = document.getElementById('s-client').value;
+  const site_name = document.getElementById('s-name').value.trim();
+  const country = document.getElementById('s-country').value;
+  if(!client_name||!site_name){showToast('Please select a client and enter a site name.',true);return;}
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/sites`, {
+    method:'POST', headers:{...HEADERS,'Prefer':'return=minimal'},
+    body: JSON.stringify({client_name, site_name, country})
+  });
+  if(!res.ok){showToast('Error: HTTP '+res.status,true);return;}
+  showToast('Site added ✓');
+  document.getElementById('s-name').value='';
+  await loadSites();
+  renderSitesList();
+}
+
+async function deleteSite(id, name){
+  if(!confirm(`Delete site "${name}"? This cannot be undone.`)) return;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/sites?id=eq.${id}`, {
+    method:'DELETE', headers:HEADERS
+  });
+  if(!res.ok){showToast('Error: HTTP '+res.status,true);return;}
+  showToast('Site deleted ✓');
+  await loadSites();
+  renderSitesList();
+}
+
 // ─── Countries & Clients Data ─────────────────────────────────
 async function loadCountries(){
   try {
@@ -1539,9 +1735,10 @@ function populateClientDropdown(filterCountry=''){
 
 function onCountryChange(){
   const sel = document.getElementById('m-country');
-  const selectedOption = sel.options[sel.selectedIndex];
-  // Auto-filter clients by selected country
   populateClientDropdown(sel.value);
+  document.getElementById('m-client').value='';
+  document.getElementById('m-site').value='';
+  populateSiteDropdown('');
 }
 
 // ─── Countries Modal ───────────────────────────────────────────
@@ -2174,7 +2371,7 @@ function exportClientReportToPDF(){
   <table>
     <thead>
       <tr>
-        <th>TSR</th><th>Country</th><th>Start date</th><th>End date</th><th>Days</th><th>Visit type</th><th>Status</th>
+        <th>TSR</th><th>Country</th><th>Site</th><th>Start date</th><th>End date</th><th>Days</th><th>Visit type</th><th>Status</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>
@@ -2209,7 +2406,7 @@ function printClientReport(){
 
 // ─── Init ──────────────────────────────────────────────────────
 async function init(){
-  await Promise.all([loadUsers(), loadCountries(), loadClients(), loadVisitTypes()]);
+  await Promise.all([loadUsers(), loadCountries(), loadClients(), loadVisitTypes(), loadSites()]);
   await loadTrips();
 }
 // init() is called by enterApp() after successful login
