@@ -1360,11 +1360,22 @@ function renderUsersList(){
         <div style="font-size:10px;color:#9b8bb4">${u.email||'No email'} · <span class="role-badge">${u.role||'TSR'}</span></div>
       </div>
       <div class="color-dot" style="background:${u.color||'#7c3aed'}" title="Colour"></div>
-      <button onclick="openEditUser('${u.id}')" style="background:transparent;border:1px solid #d4c0f0;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;color:#5b2d8e;font-weight:600">
-        Edit
-      </button>
+      <button onclick="openEditUser('${u.id}')" style="background:transparent;border:1px solid #d4c0f0;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;color:#5b2d8e;font-weight:600;margin-right:4px">Edit</button>
+      <button onclick="deleteUser('${u.id}','${u.full_name}')" style="background:transparent;border:1px solid #fca5a5;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;color:#dc2626;font-weight:600">Delete</button>
     </div>
   `).join('');
+}
+
+async function deleteUser(id, name){
+  if(!confirm(`Delete "${name}"?\n\nNote: their existing trips will remain but the user will be removed from the system.`)) return;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${id}`, {
+    method:'DELETE', headers:HEADERS
+  });
+  if(!res.ok){showToast('Error: HTTP '+res.status,true);return;}
+  showToast(`${name} deleted ✓`);
+  await loadUsers();
+  renderUsersList();
+  populateUserDropdown();
 }
 
 function openEditUser(id){
