@@ -489,6 +489,7 @@ body{background:#e0f2fa;min-height:100vh;padding:16px}
     <div class="modal-actions">
       <button class="btn-delete" id="btn-delete" style="display:none" onclick="deleteTrip()"><i class="ti ti-trash" style="font-size:13px"></i> Delete</button>
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button id="btn-save-more" style="display:none;padding:7px 14px;font-size:12px;border:none;border-radius:6px;background:#0082b8;color:#fff;cursor:pointer;font-weight:600" onclick="saveItemAndMore()"><i class="ti ti-plus" style="font-size:13px;margin-right:4px"></i>Save more</button>
       <button class="btn-save" onclick="saveItem()"><span id="btn-save-text">Save trip</span></button>
     </div>
   </div>
@@ -1234,6 +1235,7 @@ function openModal(){
   document.getElementById('modal-title-text').textContent='Add new trip';
   document.getElementById('btn-save-text').textContent='Save trip';
   document.getElementById('btn-delete').style.display='none';
+  document.getElementById('btn-save-more').style.display='';
   document.getElementById('m-tsr').value='';
   ['m-country','m-client','m-site','m-start','m-end'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('m-vtype').value='';
@@ -1248,6 +1250,7 @@ function openEditModal(id){
   document.getElementById('modal-title-text').textContent='Edit trip';
   document.getElementById('btn-save-text').textContent='Update trip';
   document.getElementById('btn-delete').style.display='';
+  document.getElementById('btn-save-more').style.display='none';
   document.getElementById('m-tsr').value=t.tsr;
   document.getElementById('m-country').value=t.country;
   populateClientDropdown(t.country);
@@ -1259,6 +1262,44 @@ function openEditModal(id){
   document.getElementById('modal').classList.add('open');
 }
 function closeModal(){document.getElementById('modal').classList.remove('open');editingId=null;}
+
+async function saveItemAndMore(){
+  const tsr = document.getElementById('m-tsr').value;
+  const country = document.getElementById('m-country').value;
+  const countryObj = allCountries.find(c=>c.name===country);
+  const flag = countryObj ? (countryObj.flag||'🌍') : '🌍';
+  const client = document.getElementById('m-client').value;
+  const site = document.getElementById('m-site').value;
+  const start_date = document.getElementById('m-start').value;
+  const end_date = document.getElementById('m-end').value;
+  const visit_type = document.getElementById('m-vtype').value;
+  const status = document.getElementById('m-status').value;
+  if(!tsr){showToast('Please select a TSR.',true);return;}
+  if(!country||!client||!start_date||!end_date){showToast('Please fill in all required fields.',true);return;}
+  const payload={tsr,country,flag,client,site:site||null,start_date,end_date,visit_type,status};
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/trips`,{
+      method:'POST', headers:{...HEADERS,'Prefer':'return=minimal'},
+      body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    // Show inline success message
+    showToast(`Trip for ${tsr} saved ✓ — add another below`);
+    // Keep TSR, clear everything else
+    const savedTsr = tsr;
+    ['m-country','m-client','m-site','m-start','m-end'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('m-vtype').value='';
+    document.getElementById('m-status').value='Planned';
+    populateClientDropdown('');
+    populateSiteDropdown('');
+    // Restore TSR
+    document.getElementById('m-tsr').value=savedTsr;
+    // Reload trips in background
+    await loadTrips();
+  } catch(e){
+    showToast('Error: '+e.message,true);
+  }
+}
 
 async function saveItem(){
   const tsr=document.getElementById('m-tsr').value;
