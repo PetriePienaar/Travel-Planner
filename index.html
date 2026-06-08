@@ -1245,8 +1245,26 @@ function setNav(el,key){
     applyFilters();
     setTab('items', document.querySelectorAll('.tab')[0]);
   }
-  else if(key==='client-report'){setTab('client-report',null);populateReportClientDropdown();}
-  else if(key==='tsr-report'){setTab('tsr-report',null);populateReportTsrDropdown();}
+  else if(key==='client-report'){
+    setTab('client-report',null);
+    // Reset report
+    document.getElementById('report-client').value='';
+    document.getElementById('client-report-output').innerHTML='<div style="text-align:center;padding:32px;color:#aaa;font-size:13px"><i class="ti ti-building" style="font-size:36px;display:block;margin-bottom:8px;color:#c0dff0"></i>Select a client to view their trips</div>';
+    document.getElementById('btn-print-report').style.display='none';
+    document.getElementById('btn-export-report').style.display='none';
+    document.getElementById('btn-pdf-report').style.display='none';
+    populateReportClientDropdown();
+  }
+  else if(key==='tsr-report'){
+    setTab('tsr-report',null);
+    // Reset report
+    document.getElementById('report-tsr').value='';
+    document.getElementById('tsr-report-output').innerHTML='<div style="text-align:center;padding:32px;color:#aaa;font-size:13px"><i class="ti ti-user" style="font-size:36px;display:block;margin-bottom:8px;color:#c0dff0"></i>Select a TSR to view their trips</div>';
+    document.getElementById('btn-print-tsr').style.display='none';
+    document.getElementById('btn-export-tsr').style.display='none';
+    document.getElementById('btn-pdf-tsr').style.display='none';
+    populateReportTsrDropdown();
+  }
   else if(key==='reports'){setTab('other',null);}
 }
 function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
