@@ -1255,6 +1255,8 @@ function openEditModal(id){
   document.getElementById('m-country').value=t.country;
   populateClientDropdown(t.country);
   document.getElementById('m-client').value=t.client;
+  populateSiteDropdown(t.client);
+  document.getElementById('m-site').value=t.site||'';
   document.getElementById('m-start').value=t.start_date;
   document.getElementById('m-end').value=t.end_date;
   document.getElementById('m-vtype').value=t.visit_type||'';
