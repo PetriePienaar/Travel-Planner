@@ -475,7 +475,7 @@ body{background:#e0f2fa;min-height:100vh;padding:16px}
     <div class="mf"><label>Client</label><select id="m-client" onchange="onClientChange()"><option value="">— Select client —</option></select></div>
     <div class="mf"><label>Site</label><select id="m-site"><option value="">— Select site (optional) —</option></select></div>
     <div class="mf-row">
-      <div class="mf"><label>Start date</label><input id="m-start" type="date"></div>
+      <div class="mf"><label>Start date</label><input id="m-start" type="date" onchange="onStartDateChange()"></div>
       <div class="mf"><label>End date</label><input id="m-end" type="date"></div>
     </div>
     <div class="mf-row">
@@ -1238,6 +1238,7 @@ function openModal(){
   document.getElementById('btn-save-more').style.display='';
   document.getElementById('m-tsr').value='';
   ['m-country','m-client','m-site','m-start','m-end'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('m-end').min='';
   document.getElementById('m-vtype').value='';
   document.getElementById('m-status').value='Planned';
   document.getElementById('modal').classList.add('open');
@@ -1265,6 +1266,19 @@ function openEditModal(id){
 }
 function closeModal(){document.getElementById('modal').classList.remove('open');editingId=null;}
 
+function onStartDateChange(){
+  const start = document.getElementById('m-start').value;
+  const endInput = document.getElementById('m-end');
+  if(start){
+    endInput.min = start;
+    // If end date is before start date, clear it
+    if(endInput.value && endInput.value < start){
+      endInput.value = '';
+      showToast('End date must be after start date.', true);
+    }
+  }
+}
+
 async function saveItemAndMore(){
   const tsr = document.getElementById('m-tsr').value;
   const country = document.getElementById('m-country').value;
@@ -1278,6 +1292,7 @@ async function saveItemAndMore(){
   const status = document.getElementById('m-status').value;
   if(!tsr){showToast('Please select a TSR.',true);return;}
   if(!country||!client||!start_date||!end_date){showToast('Please fill in all required fields.',true);return;}
+  if(end_date < start_date){showToast('End date must be on or after the start date.',true);return;}
   const payload={tsr,country,flag,client,site:site||null,start_date,end_date,visit_type,status};
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/trips`,{
@@ -1290,6 +1305,7 @@ async function saveItemAndMore(){
     // Keep TSR, clear everything else
     const savedTsr = tsr;
     ['m-country','m-client','m-site','m-start','m-end'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('m-end').min='';
     document.getElementById('m-vtype').value='';
     document.getElementById('m-status').value='Planned';
     populateClientDropdown('');
@@ -1315,6 +1331,7 @@ async function saveItem(){
   const status=document.getElementById('m-status').value;
   if(!tsr){showToast('Please select a TSR.',true);return;}
   if(!country||!client||!start_date||!end_date){showToast('Please fill in all required fields.',true);return;}
+  if(end_date < start_date){showToast('End date must be on or after the start date.',true);return;}
   const payload={tsr,country,client,site:site||null,start_date,end_date,visit_type,status};
   try {
     let res;
