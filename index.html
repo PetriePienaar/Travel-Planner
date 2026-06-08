@@ -2,8 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<script>
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Travel Planner</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
@@ -2455,8 +2453,6 @@ function exportClientReportToPDF(){
 <html>
 <head>
   <meta charset="UTF-8">
-<script>
-
   <title>Client Report — ${client}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -2516,13 +2512,13 @@ function exportClientReportToPDF(){
     <span>Client: ${client} · Generated ${today}</span>
   </div>
 
-  <script>window.onload=()=>window.print()<\/script>
-</body>
+  </body>
 </html>`;
 
   const win = window.open('','_blank');
   win.document.write(html);
   win.document.close();
+  setTimeout(()=>win.print(),500);
   showToast('PDF ready — use Print → Save as PDF ✓');
 }
 
@@ -2530,11 +2526,11 @@ function printClientReport(){
   const client = document.getElementById('report-client').value;
   const output = document.getElementById('client-report-output').innerHTML;
   const win = window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html><head><title>Client Report — ${client}</title>
+  win.document.write(`<!DOCTYPE html><html><head><title>Client Report - ${client}</title>
     <style>*{box-sizing:border-box;font-family:'Segoe UI',sans-serif}body{padding:24px;color:#1a1a2e}
     table{width:100%;border-collapse:collapse}.visit-badge,.status-pill{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
     @media print{body{padding:0}}</style></head>
-    <body>${output}<script>window.onload=()=>window.print()<\/script></body></html>`);
+    <body>${output}</body></html>`);
   win.document.close();
 }
 
@@ -2723,8 +2719,6 @@ function exportTsrReportToPDF(){
   }).join('');
 
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
-<script>
-
   <title>TSR Report — ${tsr}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a2e;padding:32px}
@@ -2765,12 +2759,12 @@ function exportTsrReportToPDF(){
     <th>Country</th><th>Client</th><th>Site</th><th>Start date</th><th>End date</th><th>Days</th><th>Visit type</th><th>Status</th>
   </tr></thead><tbody>${rows}</tbody></table>
   <div class="footer"><span>IMDEX Travel Planner — Confidential</span><span>TSR: ${tsr} · Generated ${today}</span></div>
-  <script>window.onload=()=>window.print()<\/script>
   </body></html>`;
 
   const win=window.open('','_blank');
   win.document.write(html);
   win.document.close();
+  setTimeout(()=>win.print(),500);
   showToast('PDF ready — use Print → Save as PDF ✓');
 }
 
@@ -2782,7 +2776,7 @@ function printTsrReport(){
     <style>*{box-sizing:border-box;font-family:'Segoe UI',sans-serif}body{padding:24px;color:#1a1a2e}
     table{width:100%;border-collapse:collapse}.visit-badge,.status-pill{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
     @media print{body{padding:0}}</style></head>
-    <body>${output}<script>window.onload=()=>window.print()<\/script></body></html>`);
+    <body>${output}</body></html>`);
   win.document.close();
 }
 
