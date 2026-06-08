@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Travel Planner</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
@@ -311,6 +313,7 @@ body{background:#e0f2fa;min-height:100vh;padding:16px}
       <div class="sidebar-divider"></div>
       <div class="sidebar-item" onclick="setNav(this,'reports')"><i class="ti ti-chart-bar"></i> Reports</div>
       <div class="sidebar-item" onclick="setNav(this,'client-report')" style="padding-left:28px;font-size:11px"><i class="ti ti-building" style="font-size:13px"></i> Client report</div>
+      <div class="sidebar-item" onclick="setNav(this,'tsr-report')" style="padding-left:28px;font-size:11px"><i class="ti ti-user" style="font-size:13px"></i> TSR report</div>
     </div>
   </div>
 
@@ -404,6 +407,40 @@ body{background:#e0f2fa;min-height:100vh;padding:16px}
         </div>
 
         <div id="client-report-output"></div>
+      </div>
+
+      <div id="view-tsr-report" style="display:none;padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <div style="width:36px;height:36px;background:#00527a;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;flex-shrink:0">
+            <i class="ti ti-user"></i>
+          </div>
+          <div>
+            <div style="font-size:16px;font-weight:600;color:#00273a">TSR Travel Report</div>
+            <div style="font-size:11px;color:#4a7a96">All trips for a selected TSR</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <label style="font-size:11px;font-weight:600;color:#2a6a8a;display:block;margin-bottom:4px">Select TSR</label>
+            <select id="report-tsr" onchange="runTsrReport()" style="width:100%;padding:8px 10px;font-size:13px;border:1px solid #a0ccec;border-radius:6px;background:#fff;color:#00273a">
+              <option value="">— Choose a TSR —</option>
+            </select>
+          </div>
+          <div style="padding-top:18px">
+            <div style="display:flex;gap:8px">
+              <button onclick="printTsrReport()" id="btn-print-tsr" style="display:none;padding:8px 16px;font-size:12px;border:1px solid #a0ccec;border-radius:6px;background:#f0f9ff;color:#00273a;cursor:pointer;font-weight:600;align-items:center;gap:6px">
+                <i class="ti ti-printer" style="font-size:14px"></i> Print
+              </button>
+              <button onclick="exportTsrReportToExcel()" id="btn-export-tsr" style="display:none;padding:8px 16px;font-size:12px;border:1px solid #bbf7d0;border-radius:6px;background:#dcfce7;color:#166534;cursor:pointer;font-weight:600;align-items:center;gap:6px">
+                <i class="ti ti-file-spreadsheet" style="font-size:14px"></i> Export to Excel
+              </button>
+              <button onclick="exportTsrReportToPDF()" id="btn-pdf-tsr" style="display:none;padding:8px 16px;font-size:12px;border:1px solid #fca5a5;border-radius:6px;background:#fef2f2;color:#dc2626;cursor:pointer;font-weight:600;align-items:center;gap:6px">
+                <i class="ti ti-file-type-pdf" style="font-size:14px"></i> Export to PDF
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="tsr-report-output"></div>
       </div>
     </div>
   </div>
@@ -1179,7 +1216,8 @@ function setTab(tab,el){
   document.getElementById('view-items').style.display=tab==='items'?'':'none';
   document.getElementById('view-calendar').style.display=tab==='calendar'?'':'none';
   document.getElementById('view-client-report').style.display=tab==='client-report'?'':'none';
-  document.getElementById('view-other').style.display=(tab!=='items'&&tab!=='calendar'&&tab!=='client-report')?'':'none';
+  document.getElementById('view-tsr-report').style.display=tab==='tsr-report'?'':'none';
+  document.getElementById('view-other').style.display=(tab!=='items'&&tab!=='calendar'&&tab!=='client-report'&&tab!=='tsr-report')?'':'none';
   render();
 }
 function setNav(el,key){
@@ -1210,6 +1248,7 @@ function setNav(el,key){
     setTab('items', document.querySelectorAll('.tab')[0]);
   }
   else if(key==='client-report'){setTab('client-report',null);populateReportClientDropdown();}
+  else if(key==='tsr-report'){setTab('tsr-report',null);populateReportTsrDropdown();}
   else if(key==='reports'){setTab('other',null);}
 }
 function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
@@ -2416,6 +2455,8 @@ function exportClientReportToPDF(){
 <html>
 <head>
   <meta charset="UTF-8">
+<script>
+
   <title>Client Report — ${client}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -2490,6 +2531,254 @@ function printClientReport(){
   const output = document.getElementById('client-report-output').innerHTML;
   const win = window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head><title>Client Report — ${client}</title>
+    <style>*{box-sizing:border-box;font-family:'Segoe UI',sans-serif}body{padding:24px;color:#1a1a2e}
+    table{width:100%;border-collapse:collapse}.visit-badge,.status-pill{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+    @media print{body{padding:0}}</style></head>
+    <body>${output}<script>window.onload=()=>window.print()<\/script></body></html>`);
+  win.document.close();
+}
+
+// ─── TSR Report ───────────────────────────────────────────────
+function populateReportTsrDropdown(){
+  const sel = document.getElementById('report-tsr');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Choose a TSR —</option>' +
+    allUsers.map(u=>`<option value="${u.full_name}"${u.full_name===cur?' selected':''}>${u.full_name}</option>`).join('');
+  if(cur) runTsrReport();
+}
+
+function runTsrReport(){
+  const tsr = document.getElementById('report-tsr').value;
+  const output = document.getElementById('tsr-report-output');
+  const printBtn = document.getElementById('btn-print-tsr');
+  const excelBtn = document.getElementById('btn-export-tsr');
+  const pdfBtn = document.getElementById('btn-pdf-tsr');
+  if(!tsr){
+    output.innerHTML='<div style="text-align:center;padding:32px;color:#aaa;font-size:13px"><i class="ti ti-user" style="font-size:36px;display:block;margin-bottom:8px;color:#c0dff0"></i>Select a TSR to view their trips</div>';
+    [printBtn,excelBtn,pdfBtn].forEach(b=>b.style.display='none');
+    return;
+  }
+  const trips = allTrips.filter(t=>t.tsr===tsr).sort((a,b)=>new Date(a.start_date)-new Date(b.start_date));
+  const userObj = allUsers.find(u=>u.full_name===tsr);
+  if(!trips.length){
+    output.innerHTML=`<div style="text-align:center;padding:32px;color:#aaa;font-size:13px">No trips found for <strong>${tsr}</strong></div>`;
+    [printBtn,excelBtn,pdfBtn].forEach(b=>b.style.display='none');
+    return;
+  }
+  const totalDays = trips.reduce((sum,t)=>sum+Math.round((new Date(t.end_date)-new Date(t.start_date))/(1000*60*60*24))+1,0);
+  const confirmed = trips.filter(t=>t.status==='Confirmed').length;
+  const planned = trips.filter(t=>t.status==='Planned').length;
+  const completed = trips.filter(t=>t.status==='Completed').length;
+  const countries = [...new Set(trips.map(t=>t.country))];
+  const clients = [...new Set(trips.map(t=>t.client))];
+  const color = userObj ? (userObj.color||'#00527a') : '#00527a';
+
+  output.innerHTML = `
+    <!-- TSR header -->
+    <div style="background:linear-gradient(135deg,#00273a,#00527a);border-radius:10px;padding:16px 20px;margin-bottom:16px;color:#fff;display:flex;align-items:center;gap:14px">
+      <div style="width:48px;height:48px;border-radius:50%;background:${color};border:3px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0">${ini(tsr)}</div>
+      <div>
+        <div style="font-size:17px;font-weight:700">${tsr}</div>
+        <div style="font-size:11px;opacity:0.8">${userObj?userObj.role||'TSR':''} · ${userObj?userObj.email||'':''}</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div style="font-size:11px;opacity:0.7">Generated: ${new Date().toLocaleDateString('en-ZA',{day:'2-digit',month:'long',year:'numeric'})}</div>
+      </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px">
+      <div style="background:#dbeafe;border-radius:8px;padding:10px 12px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:#1e3a8a">${trips.length}</div>
+        <div style="font-size:10px;font-weight:600;color:#1e40af">Total trips</div>
+      </div>
+      <div style="background:#dcfce7;border-radius:8px;padding:10px 12px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:#14532d">${confirmed}</div>
+        <div style="font-size:10px;font-weight:600;color:#166534">Confirmed</div>
+      </div>
+      <div style="background:#fef9c3;border-radius:8px;padding:10px 12px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:#713f12">${planned}</div>
+        <div style="font-size:10px;font-weight:600;color:#854d0e">Planned</div>
+      </div>
+      <div style="background:#f3e8ff;border-radius:8px;padding:10px 12px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:#4a1772">${totalDays}</div>
+        <div style="font-size:10px;font-weight:600;color:#6b21a8">Total days</div>
+      </div>
+      <div style="background:#e0f2fa;border-radius:8px;padding:10px 12px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:#00273a">${countries.length}</div>
+        <div style="font-size:10px;font-weight:600;color:#00527a">Countries</div>
+      </div>
+    </div>
+
+    <!-- Countries visited -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:#00273a;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px">Countries visited</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${countries.map(c=>`<div style="background:#e0f2fa;border:1px solid #a0ccec;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:500;color:#00273a">${c}</div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Clients visited -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:#00273a;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px">Clients visited</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${clients.map(c=>`<div style="background:#f0f9ff;border:1px solid #a0ccec;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:500;color:#00273a">🏢 ${c}</div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Trip table -->
+    <div style="font-size:11px;font-weight:700;color:#00273a;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Trip history</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead>
+        <tr style="background:#eaf6fd">
+          <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#2a6a8a;border-bottom:1px solid #c0dff0">Country</th>
+          <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#2a6a8a;border-bottom:1px solid #c0dff0">Client</th>
+          <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#2a6a8a;border-bottom:1px solid #c0dff0">Site</th>
+          <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#2a6a8a;border-bottom:1px solid #c0dff0">Start date</th>
+          <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#2a6a8a;border-bottom:1px solid #c0dff0">End date</th>
+          <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#2a6a8a;border-bottom:1px solid #c0dff0">Days</th>
+          <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#2a6a8a;border-bottom:1px solid #c0dff0">Visit type</th>
+          <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#2a6a8a;border-bottom:1px solid #c0dff0">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${trips.map((t,i)=>{
+          const vtObj=allVisitTypes.find(v=>v.name===t.visit_type);
+          const vc=vtObj?{bg:vtObj.color_bg,color:vtObj.color_text}:(VISIT_COLORS[t.visit_type]||{bg:'#f3f4f6',color:'#374151'});
+          const sc=STATUS_COLORS[t.status]||{bg:'#f3f4f6',color:'#374151'};
+          const days=Math.round((new Date(t.end_date)-new Date(t.start_date))/(1000*60*60*24))+1;
+          return `<tr style="background:${i%2===0?'#fff':'#f5fbff'}">
+            <td style="padding:8px 10px;border-bottom:1px solid #e8f4fb">${t.country}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #e8f4fb">${t.client}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #e8f4fb">${t.site||'—'}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #e8f4fb">${fmtD(t.start_date)}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #e8f4fb">${fmtD(t.end_date)}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #e8f4fb">${days}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #e8f4fb"><span class="visit-badge" style="background:${vc.bg};color:${vc.color}">${t.visit_type}</span></td>
+            <td style="padding:8px 10px;border-bottom:1px solid #e8f4fb"><span class="status-pill" style="background:${sc.bg};color:${sc.color}">${t.status}</span></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+  [printBtn,excelBtn,pdfBtn].forEach(b=>b.style.display='flex');
+}
+
+function exportTsrReportToExcel(){
+  const tsr = document.getElementById('report-tsr').value;
+  if(!tsr) return;
+  const trips = allTrips.filter(t=>t.tsr===tsr).sort((a,b)=>new Date(a.start_date)-new Date(b.start_date));
+  if(!trips.length){showToast('No trips to export.',true);return;}
+  const totalDays = trips.reduce((sum,t)=>sum+Math.round((new Date(t.end_date)-new Date(t.start_date))/(1000*60*60*24))+1,0);
+  const headers = ['TSR','Country','Client','Site','Start Date','End Date','Days','Visit Type','Status'];
+  const rows = trips.map(t=>{
+    const days=Math.round((new Date(t.end_date)-new Date(t.start_date))/(1000*60*60*24))+1;
+    return [`"${t.tsr}"`,`"${t.country}"`,`"${t.client}"`,`"${t.site||''}"`,`"${fmtD(t.start_date)}"`,`"${fmtD(t.end_date)}"`,days,`"${t.visit_type}"`,`"${t.status}"`].join(',');
+  });
+  rows.push('');
+  rows.push(`"Total trips","${trips.length}"`);
+  rows.push(`"Total days on the road","${totalDays}"`);
+  rows.push(`"Confirmed","${trips.filter(t=>t.status==='Confirmed').length}"`);
+  rows.push(`"Planned","${trips.filter(t=>t.status==='Planned').length}"`);
+  rows.push(`"Completed","${trips.filter(t=>t.status==='Completed').length}"`);
+  const csv = [headers.join(','),...rows].join('
+');
+  const blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`TSR_Report_${tsr.replace(/[^a-z0-9]/gi,'_')}_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Exported to Excel ✓');
+}
+
+function exportTsrReportToPDF(){
+  const tsr = document.getElementById('report-tsr').value;
+  if(!tsr) return;
+  const trips = allTrips.filter(t=>t.tsr===tsr).sort((a,b)=>new Date(a.start_date)-new Date(b.start_date));
+  if(!trips.length){showToast('No trips to export.',true);return;}
+  const userObj = allUsers.find(u=>u.full_name===tsr);
+  const color = userObj?(userObj.color||'#00527a'):'#00527a';
+  const totalDays=trips.reduce((sum,t)=>sum+Math.round((new Date(t.end_date)-new Date(t.start_date))/(1000*60*60*24))+1,0);
+  const confirmed=trips.filter(t=>t.status==='Confirmed').length;
+  const planned=trips.filter(t=>t.status==='Planned').length;
+  const countries=[...new Set(trips.map(t=>t.country))];
+  const clients=[...new Set(trips.map(t=>t.client))];
+  const today=new Date().toLocaleDateString('en-ZA',{day:'2-digit',month:'long',year:'numeric'});
+  const rows=trips.map((t,i)=>{
+    const days=Math.round((new Date(t.end_date)-new Date(t.start_date))/(1000*60*60*24))+1;
+    const vtObj=allVisitTypes.find(v=>v.name===t.visit_type);
+    const vc=vtObj?{bg:vtObj.color_bg,color:vtObj.color_text}:(VISIT_COLORS[t.visit_type]||{bg:'#f3f4f6',color:'#374151'});
+    const sc=STATUS_COLORS[t.status]||{bg:'#f3f4f6',color:'#374151'};
+    return `<tr style="background:${i%2===0?'#fff':'#f9f7ff'}">
+      <td style="padding:7px 10px;border-bottom:1px solid #e8e0f0">${t.country}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e8e0f0">${t.client}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e8e0f0">${t.site||'—'}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e8e0f0">${fmtD(t.start_date)}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e8e0f0">${fmtD(t.end_date)}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e8e0f0;text-align:center">${days}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e8e0f0"><span style="background:${vc.bg};color:${vc.color};padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">${t.visit_type}</span></td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e8e0f0"><span style="background:${sc.bg};color:${sc.color};padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">${t.status}</span></td>
+    </tr>`;
+  }).join('');
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<script>
+
+  <title>TSR Report — ${tsr}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a2e;padding:32px}
+    .header{background:linear-gradient(135deg,#00273a,#00527a);color:#fff;padding:20px 24px;border-radius:8px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+    .avatar{width:48px;height:48px;border-radius:50%;background:${color};border:3px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
+    .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+    .stat{border-radius:8px;padding:10px;text-align:center}
+    .stat-num{font-size:22px;font-weight:700}.stat-lbl{font-size:10px;font-weight:600;margin-top:2px}
+    .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+    .chip{background:#e0f2fa;border:1px solid #a0ccec;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500;color:#00273a}
+    .section-title{font-size:11px;font-weight:700;color:#00273a;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px}
+    table{width:100%;border-collapse:collapse;margin-bottom:20px}
+    th{background:#00273a;color:#fff;padding:8px 10px;text-align:left;font-size:11px;font-weight:600}
+    .footer{border-top:1px solid #e0d4f5;padding-top:10px;font-size:10px;color:#aaa;display:flex;justify-content:space-between}
+    @media print{body{padding:16px}@page{margin:1.5cm;size:A4 landscape}}
+  </style></head><body>
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div class="avatar">${ini(tsr)}</div>
+      <div><div style="font-size:18px;font-weight:700">${tsr}</div>
+      <div style="font-size:11px;opacity:0.75">${userObj?userObj.role||'TSR':''} · ${userObj?userObj.email||'':''}</div></div>
+    </div>
+    <div style="text-align:right;font-size:10px;opacity:0.7">TSR Travel Report<br>Generated: ${today}<br>IMDEX Travel Planner</div>
+  </div>
+  <div class="stats">
+    <div class="stat" style="background:#dbeafe"><div class="stat-num" style="color:#1e3a8a">${trips.length}</div><div class="stat-lbl" style="color:#1e40af">Total trips</div></div>
+    <div class="stat" style="background:#dcfce7"><div class="stat-num" style="color:#14532d">${confirmed}</div><div class="stat-lbl" style="color:#166534">Confirmed</div></div>
+    <div class="stat" style="background:#fef9c3"><div class="stat-num" style="color:#713f12">${planned}</div><div class="stat-lbl" style="color:#854d0e">Planned</div></div>
+    <div class="stat" style="background:#f3e8ff"><div class="stat-num" style="color:#4a1772">${totalDays}</div><div class="stat-lbl" style="color:#6b21a8">Total days</div></div>
+    <div class="stat" style="background:#e0f2fa"><div class="stat-num" style="color:#00273a">${countries.length}</div><div class="stat-lbl" style="color:#00527a">Countries</div></div>
+  </div>
+  <div class="section-title">Countries visited</div>
+  <div class="chips" style="margin-bottom:14px">${countries.map(c=>`<div class="chip">${c}</div>`).join('')}</div>
+  <div class="section-title">Clients visited</div>
+  <div class="chips" style="margin-bottom:16px">${clients.map(c=>`<div class="chip">🏢 ${c}</div>`).join('')}</div>
+  <div class="section-title">Trip history</div>
+  <table><thead><tr>
+    <th>Country</th><th>Client</th><th>Site</th><th>Start date</th><th>End date</th><th>Days</th><th>Visit type</th><th>Status</th>
+  </tr></thead><tbody>${rows}</tbody></table>
+  <div class="footer"><span>IMDEX Travel Planner — Confidential</span><span>TSR: ${tsr} · Generated ${today}</span></div>
+  <script>window.onload=()=>window.print()<\/script>
+  </body></html>`;
+
+  const win=window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  showToast('PDF ready — use Print → Save as PDF ✓');
+}
+
+function printTsrReport(){
+  const output = document.getElementById('tsr-report-output').innerHTML;
+  const tsr = document.getElementById('report-tsr').value;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>TSR Report — ${tsr}</title>
     <style>*{box-sizing:border-box;font-family:'Segoe UI',sans-serif}body{padding:24px;color:#1a1a2e}
     table{width:100%;border-collapse:collapse}.visit-badge,.status-pill{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
     @media print{body{padding:0}}</style></head>
