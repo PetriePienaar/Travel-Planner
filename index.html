@@ -5,13 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Travel Planner</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#00273a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Travel Planner">
-<link rel="apple-touch-icon" href="/icon-192.png">
-<meta name="mobile-web-app-capable" content="yes">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif}
 body{background:#e0f2fa;min-height:100vh;padding:16px}
@@ -2463,15 +2456,6 @@ function exportClientReportToPDF(){
   </div>
 
   <script>window.onload=()=>window.print()<\/script>
-<script>
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('SW registered:', reg.scope))
-      .catch(err => console.log('SW registration failed:', err));
-  });
-}
-</script>
 </body>
 </html>`;
 
@@ -2499,15 +2483,6 @@ async function init(){
   await loadTrips();
 }
 // init() is called by enterApp() after successful login
-</script>
-<script>
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('SW registered:', reg.scope))
-      .catch(err => console.log('SW registration failed:', err));
-  });
-}
 </script>
 </body>
 </html>
